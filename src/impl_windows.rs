@@ -55,7 +55,7 @@ pub fn runas_impl(cmd: &Command) -> io::Result<ExitStatus> {
         let mut sei = SHELLEXECUTEINFOW { 
             cbSize: mem::size_of::<SHELLEXECUTEINFOW>() as u32,
             fMask: SEE_MASK_NOASYNC | SEE_MASK_NOCLOSEPROCESS,
-            lpVerb: (*"runas").encode_utf16().collect::<Vec<u16>>().as_ptr(),
+            lpVerb: ptr::null(),
             lpFile: file.as_ptr(),
             lpParameters: params.as_ptr(),
             nShow: show,
