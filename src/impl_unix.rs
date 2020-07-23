@@ -2,7 +2,7 @@ use which;
 
 use std::io;
 use std::process;
-use std::process::ExitStatus;
+use std::process::Child;
 
 use crate::Command;
 pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
@@ -12,7 +12,7 @@ pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
             if cmd.force_prompt {
                 c.arg("-k");
             }
-            c.arg("--").arg(&cmd.command).args(&cmd.args[..])
+            c.arg("--").arg(&cmd.command).args(&cmd.args[..]).spawn()
         }
         Err(_) => Err(io::Error::new(
             io::ErrorKind::NotFound,
