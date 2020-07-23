@@ -4,14 +4,15 @@ use std::io;
 use std::mem;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
-use std::process::ExitStatus;
+use std::process::Child;
 use std::ptr;
 
 use crate::impl_unix::runas_impl as runas_sudo_impl;
 use crate::Command;
 
 extern "C" {
-    fn rust_darwin_gui_runas(cmd: *const i8, argv: *const *const i8) -> u32;
+    fn rust_darwin_gui_spawn(cmd: *const i8, argv: *const *const i8) -> u32;
+    fn rust_darwin_gui_wait(pid: const u32) -> u32;
 }
 
 fn find_exe<P: AsRef<Path>>(exe_name: P) -> Option<PathBuf> {
@@ -47,7 +48,7 @@ macro_rules! make_cstring {
     };
 }
 
-fn runas_gui_impl(cmd: &Command) -> io::Result<ExitStatus> {
+fn spawn_gui_impl(cmd: &Command) -> io::Result<Child> {
     let exe: OsString = match find_exe(&cmd.command) {
         Some(exe) => exe.into(),
         None => unsafe {
@@ -63,16 +64,16 @@ fn runas_gui_impl(cmd: &Command) -> io::Result<ExitStatus> {
     argv.push(ptr::null());
 
     unsafe {
-        Ok(mem::transmute(rust_darwin_gui_runas(
+        Ok(mem::transmute(rust_darwin_gui_spawn(
             prog.as_ptr(),
             argv.as_ptr(),
         )))
     }
 }
 
-pub fn runas_impl(cmd: &Command) -> io::Result<ExitStatus> {
+pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
     if cmd.gui {
-        runas_gui_impl(&cmd)
+        spawn_gui_impl(&cmd)
     } else {
         runas_sudo_impl(&cmd)
     }

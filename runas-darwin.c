@@ -9,7 +9,7 @@
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
 
 
-int rust_darwin_gui_runas(const char *prog, const char **argv)
+int rust_darwin_gui_spawn(const char *prog, const char **argv)
 {
     AuthorizationRef authref = 0;
     FILE *pipe = 0;
@@ -29,7 +29,11 @@ int rust_darwin_gui_runas(const char *prog, const char **argv)
         return -1;
     }
 
-    int pid = fcntl(fileno(pipe), F_GETOWN, 0);
+    return fcntl(fileno(pipe), F_GETOWN, 0);
+}
+
+int rust_darwin_gui_wait(const int pid)
+{
     int r, status;
     do {
         r = waitpid(pid, &status, 0);

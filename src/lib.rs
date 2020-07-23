@@ -29,9 +29,10 @@
 //! * Windows: always GUI mode
 //! * OS X: GUI and CLI mode
 //! * Linux: CLI mode
+
 use std::ffi::{OsStr, OsString};
 use std::io;
-use std::process::ExitStatus;
+use std::process::Child;
 
 #[cfg(target_os = "macos")]
 mod impl_darwin;
@@ -113,15 +114,13 @@ impl Command {
         self
     }
 
-    /// Executes a command as a child process, waiting for it to finish and
-    /// collecting its exit status.
-    pub fn status(&mut self) -> io::Result<ExitStatus> {
+    pub fn spawn(&mut self) -> io::Result<Child> {
         #[cfg(all(unix, target_os = "macos"))]
-        use crate::impl_darwin::runas_impl;
+        use crate::impl_darwin::spawn_impl;
         #[cfg(all(unix, not(target_os = "macos")))]
-        use impl_unix::runas_impl;
+        use impl_unix::spawn_impl;
         #[cfg(windows)]
-        use impl_windows::runas_impl;
-        runas_impl(&self)
+        use impl_windows::spawn_impl;
+        spawn_impl(&self)
     }
 }

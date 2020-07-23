@@ -2,12 +2,20 @@ extern crate winapi;
 use std::ffi::OsStr;
 use std::io;
 use std::mem;
+use std::ptr;
 use std::os::windows::ffi::OsStrExt;
-use std::process::ExitStatus;
+use std::process::{Child};
 
 use crate::Command;
+use std::process::{ChildStdin,ChildStdout,ChildStderr};
 
-pub fn runas_impl(cmd: &Command) -> io::Result<ExitStatus> {
+use winapi::um::combaseapi::CoInitializeEx;
+use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
+use winapi::um::shellapi::{SHELLEXECUTEINFOW, ShellExecuteExW, SEE_MASK_NOASYNC, SEE_MASK_NOCLOSEPROCESS};
+use winapi::um::winuser::{SW_HIDE, SW_NORMAL};
+use winapi::shared::minwindef::FALSE;
+
+pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
     let mut params = String::new();
     for arg in cmd.args.iter() {
         let arg = arg.to_string_lossy();
@@ -39,19 +47,8 @@ pub fn runas_impl(cmd: &Command) -> io::Result<ExitStatus> {
         .collect::<Vec<_>>();
 
     unsafe {
-        use winapi::um::combaseapi::CoInitializeEx;
-        use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
-        use winapi::um::shellapi::{SHELLEXECUTEINFOW, ShellExecuteExW, SEE_MASK_NOASYNC, SEE_MASK_NOCLOSEPROCESS};
-        use winapi::um::winbase::INFINITE;
-        use winapi::um::winuser::{SW_HIDE, SW_NORMAL};
-        use winapi::shared::minwindef::{DWORD, FALSE};
-        use winapi::um::synchapi::WaitForSingleObject;
-        use winapi::um::processthreadsapi::GetExitCodeProcess;
-        use std::ptr;
-
         let show = if cmd.hide { SW_HIDE } else { SW_NORMAL };
 
-        let mut code : DWORD = 0;
         let mut sei = SHELLEXECUTEINFOW { 
             cbSize: mem::size_of::<SHELLEXECUTEINFOW>() as u32,
             fMask: SEE_MASK_NOASYNC | SEE_MASK_NOCLOSEPROCESS,
@@ -73,15 +70,9 @@ pub fn runas_impl(cmd: &Command) -> io::Result<ExitStatus> {
         CoInitializeEx(ptr::null_mut(), COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
         if ShellExecuteExW(&mut sei) == FALSE || sei.hProcess == ptr::null_mut() {
-            return Ok(mem::transmute(-1));
+            return Ok(mem::transmute((-1, None::<ChildStdin>, None::<ChildStdout>, None::<ChildStderr>)));
         }
 
-        WaitForSingleObject(sei.hProcess, INFINITE);
-
-        if GetExitCodeProcess(sei.hProcess, &mut code) == 0 {
-            return Ok(mem::transmute(-1));
-        }
-
-        Ok(mem::transmute(code))
+        return Ok(mem::transmute((sei.hProcess, None::<ChildStdin>, None::<ChildStdout>, None::<ChildStderr>)));
     }
 }
