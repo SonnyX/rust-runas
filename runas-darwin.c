@@ -29,11 +29,7 @@ int rust_darwin_gui_spawn(const char *prog, const char **argv)
         return -1;
     }
 
-    return fcntl(fileno(pipe), F_GETOWN, 0);
-}
-
-int rust_darwin_gui_wait(const int pid)
-{
+    int pid = fcntl(fileno(pipe), F_GETOWN, 0);
     int r, status;
     do {
         r = waitpid(pid, &status, 0);

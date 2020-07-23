@@ -12,7 +12,6 @@ use crate::Command;
 
 extern "C" {
     fn rust_darwin_gui_spawn(cmd: *const i8, argv: *const *const i8) -> u32;
-    fn rust_darwin_gui_wait(pid: const u32) -> u32;
 }
 
 fn find_exe<P: AsRef<Path>>(exe_name: P) -> Option<PathBuf> {
@@ -64,10 +63,17 @@ fn spawn_gui_impl(cmd: &Command) -> io::Result<Child> {
     argv.push(ptr::null());
 
     unsafe {
-        Ok(mem::transmute(rust_darwin_gui_spawn(
-            prog.as_ptr(),
-            argv.as_ptr(),
-        )))
+        Ok(
+            mem::transmute(
+                (
+                    0,
+                    rust_darwin_gui_spawn(prog.as_ptr(),argv.as_ptr()),
+                    None::<ChildStdin>,
+                    None::<ChildStdout>,
+                    None::<ChildStderr>
+                )
+            )
+        )
     }
 }
 
