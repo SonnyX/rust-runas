@@ -11,7 +11,7 @@ use std::process::{ChildStdin,ChildStdout,ChildStderr};
 
 use winapi::um::combaseapi::CoInitializeEx;
 use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
-use winapi::um::shellapi::{SHELLEXECUTEINFOW, ShellExecuteExW, SEE_MASK_NOASYNC, SEE_MASK_NOCLOSEPROCESS};
+use winapi::um::shellapi::{SHELLEXECUTEINFOW, ShellExecuteExW, SEE_MASK_NOASYNC, SEE_MASK_NOCLOSEPROCESS, SEE_MASK_INVOKEIDLIST};
 use winapi::um::winuser::{SW_HIDE, SW_NORMAL};
 use winapi::shared::minwindef::FALSE;
 
@@ -37,11 +37,6 @@ pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
         }
     }
 
-    let lpVerb = match &cmd.command.to_string_lossy().ends_with(".exe") {
-        false => "runas".encode_utf16().collect::<Vec<u16>>().as_ptr(),
-        true => ptr::null()
-    };
-
     let file = OsStr::new(&cmd.command)
         .encode_wide()
         .chain(Some(0))
@@ -56,8 +51,8 @@ pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
 
         let mut sei = SHELLEXECUTEINFOW { 
             cbSize: mem::size_of::<SHELLEXECUTEINFOW>() as u32,
-            fMask: SEE_MASK_NOASYNC | SEE_MASK_NOCLOSEPROCESS,
-            lpVerb: lpVerb,
+            fMask: SEE_MASK_INVOKEIDLIST | SEE_MASK_NOASYNC | SEE_MASK_NOCLOSEPROCESS,
+            lpVerb: "runas".encode_utf16().collect::<Vec<u16>>().as_ptr(),
             lpFile: file.as_ptr(),
             lpParameters: params.as_ptr(),
             nShow: show,
