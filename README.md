@@ -2,4 +2,4 @@
 
 A simple Rust library that can execute commands as root.
 
-[Documentation](http://mitsuhiko.github.io/rust-runas/)
+[Documentation](http://SonnyX.github.io/rust-runas/)

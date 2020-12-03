@@ -2,15 +2,12 @@ extern crate winapi;
 use std::ffi::OsStr;
 use std::io;
 use std::mem;
-use std::ptr;
 use std::os::windows::ffi::OsStrExt;
-use std::process::{Child};
+use std::process::{Child, ChildStdin, ChildStdout, ChildStderr};
+use std::ptr;
 
 use crate::Command;
-use std::process::{ChildStdin,ChildStdout,ChildStderr};
 
-use winapi::um::combaseapi::CoInitializeEx;
-use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
 use winapi::um::shellapi::{SHELLEXECUTEINFOW, ShellExecuteExW, SEE_MASK_NOASYNC, SEE_MASK_NOCLOSEPROCESS, SEE_MASK_INVOKEIDLIST};
 use winapi::um::winuser::{SW_HIDE, SW_NORMAL};
 use winapi::shared::minwindef::FALSE;
@@ -45,6 +42,14 @@ pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
         .encode_wide()
         .chain(Some(0))
         .collect::<Vec<_>>();
+    let current_dir = if let Some(dir) = &cmd.current_dir {
+        OsStr::new(&dir)
+            .encode_wide()
+            .chain(Some(0))
+            .collect::<Vec<_>>().as_ptr()
+    } else {
+        ptr::null_mut()
+    };
 
     unsafe {
         let show = if cmd.hide { SW_HIDE } else { SW_NORMAL };
@@ -63,14 +68,12 @@ pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
             hkeyClass: ptr::null_mut(),
             hwnd: ptr::null_mut(),
             lpClass: ptr::null_mut(),
-            lpDirectory: ptr::null_mut(),
+            lpDirectory: current_dir,
             lpIDList: ptr::null_mut(),
         };
 
-        CoInitializeEx(ptr::null_mut(), COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-
         if ShellExecuteExW(&mut sei) == FALSE || sei.hProcess == ptr::null_mut() {
-            return Ok(mem::transmute((-1, None::<ChildStdin>, None::<ChildStdout>, None::<ChildStderr>)));
+            return Err(std::io::Error::last_os_error());
         }
 
         return Ok(mem::transmute((sei.hProcess, None::<ChildStdin>, None::<ChildStdout>, None::<ChildStderr>)));

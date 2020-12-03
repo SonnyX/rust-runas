@@ -6,8 +6,8 @@ fn main() {
         "Status: {}",
         runas::Command::new("touch")
             .arg("/tmp/test.foo")
-            .force_prompt(false)
+            .disable_force_prompt()
             .status()
-            .expect("failed to execute")
+            .expect("failed to wait on child")
     );
 }

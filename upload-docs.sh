@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Create documentation:
+cargo rustdoc --release
+
 # Make a new repo for the gh-pages branch
 rm -rf .gh-pages
 mkdir .gh-pages
@@ -18,7 +21,7 @@ EOF
 git add -f --all .
 git commit -m "Built documentation"
 git checkout -b gh-pages
-git remote add origin git@github.com:mitsuhiko/rust-runas.git
+git remote add origin git@github.com:SonnyX/rust-runas.git
 git push -qf origin gh-pages
 
 # Cleanup
