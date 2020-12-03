@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Command","A process builder for elevated execution, providing fine-grained control over how a new process should be spawned."]]});
