@@ -11,6 +11,7 @@ use crate::Command;
 use winapi::um::shellapi::{SHELLEXECUTEINFOW, ShellExecuteExW, SEE_MASK_NOASYNC, SEE_MASK_NOCLOSEPROCESS, SEE_MASK_INVOKEIDLIST};
 use winapi::um::winuser::{SW_HIDE, SW_NORMAL};
 use winapi::shared::minwindef::FALSE;
+use winapi::um::winnt::HANDLE;
 
 pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
     let mut params = String::new();
@@ -75,7 +76,8 @@ pub fn spawn_impl(cmd: &Command) -> io::Result<Child> {
         if ShellExecuteExW(&mut sei) == FALSE || sei.hProcess == ptr::null_mut() {
             return Err(std::io::Error::last_os_error());
         }
+        let main_process : HANDLE = ptr::null_mut();
 
-        return Ok(mem::transmute((sei.hProcess, None::<ChildStdin>, None::<ChildStdout>, None::<ChildStderr>)));
+        return Ok(mem::transmute((sei.hProcess, main_process, None::<ChildStdin>, None::<ChildStdout>, None::<ChildStderr>)));
     }
 }
